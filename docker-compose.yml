@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-contracts}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?رمز پایگاه داده در فایل .env تعریف نشده}
+      POSTGRES_DB: ${POSTGRES_DB:-contracts}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-contracts}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # بدون ports: پایگاه داده فقط از شبکه داخلی compose در دسترس است.
+
+  app:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-contracts}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-contracts}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?کلید رمزنگاری در فایل .env تعریف نشده}
+      APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:-false}
+      APP_UPLOAD_DIR: /data/uploads
+      APP_MAX_UPLOAD_MB: ${APP_MAX_UPLOAD_MB:-20}
+      APP_EXPIRING_DAYS: ${APP_EXPIRING_DAYS:-90}
+      APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-admin}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-}
+    volumes:
+      - uploads:/data/uploads
+      - ./frontend:/srv/frontend:ro
+
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    # BIND_ADDR باید آدرس داخلی سرور باشد. با 127.0.0.1 فقط از خود سرور
+    # در دسترس است؛ برای شبکه شرکت آدرس LAN سرور را بگذارید.
+    # هرگز 0.0.0.0 نگذارید مگر آنکه فایروال جلوی اینترنت را بسته باشد.
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+
+volumes:
+  db-data:
+  uploads:

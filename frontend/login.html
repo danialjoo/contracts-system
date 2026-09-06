@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>ورود — سامانه مدیریت قراردادها</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <div class="seal" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+        <path d="M13 2v7h7"></path><path d="M8 13h8"></path><path d="M8 17h5"></path>
+      </svg>
+    </div>
+
+    <form id="loginForm">
+      <h1>سامانه مدیریت قراردادها</h1>
+      <p class="sub">برای ورود، نام کاربری و رمز عبور سازمانی خود را وارد کنید.</p>
+      <div class="note err" id="loginError" hidden></div>
+      <div class="field">
+        <label for="username">نام کاربری</label>
+        <input id="username" name="username" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">رمز عبور</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit" id="loginBtn">ورود</button>
+    </form>
+
+    <form id="changeForm" hidden>
+      <h1>تغییر رمز عبور</h1>
+      <p class="sub">ورود اول شماست. برای ادامه باید رمز عبور را عوض کنید.</p>
+      <div class="note err" id="changeError" hidden></div>
+      <div class="field">
+        <label for="currentPassword">رمز عبور فعلی</label>
+        <input id="currentPassword" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label for="newPassword">رمز عبور جدید</label>
+        <input id="newPassword" type="password" autocomplete="new-password" required>
+        <span class="hint">حداقل ۱۰ نویسه، و فقط عدد نباشد.</span>
+      </div>
+      <div class="field">
+        <label for="repeatPassword">تکرار رمز عبور جدید</label>
+        <input id="repeatPassword" type="password" autocomplete="new-password" required>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit" id="changeBtn">ثبت و ورود</button>
+    </form>
+  </main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function csrf() {
+    var m = document.cookie.match(/(?:^|;\s*)cs_csrf=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+
+  async function send(url, body) {
+    var res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf() },
+      body: JSON.stringify(body),
+    });
+    var data = null;
+    try { data = await res.json(); } catch (e) { data = null; }
+    if (!res.ok) throw new Error((data && data.detail) || "خطای غیرمنتظره رخ داد.");
+    return data;
+  }
+
+  function fail(box, message) {
+    box.textContent = message;
+    box.hidden = false;
+  }
+
+  $("loginForm").addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var box = $("loginError"), btn = $("loginBtn");
+    box.hidden = true;
+    btn.disabled = true;
+    btn.textContent = "در حال ورود…";
+    try {
+      var me = await send("/api/auth/login", {
+        username: $("username").value.trim(),
+        password: $("password").value,
+      });
+      if (me.must_change_password) {
+        $("loginForm").hidden = true;
+        $("changeForm").hidden = false;
+        $("currentPassword").value = $("password").value;
+        $("newPassword").focus();
+      } else {
+        window.location.replace("/");
+      }
+    } catch (err) {
+      fail(box, err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "ورود";
+    }
+  });
+
+  $("changeForm").addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var box = $("changeError"), btn = $("changeBtn");
+    box.hidden = true;
+    if ($("newPassword").value !== $("repeatPassword").value) {
+      return fail(box, "رمز جدید و تکرار آن یکسان نیستند.");
+    }
+    btn.disabled = true;
+    btn.textContent = "در حال ثبت…";
+    try {
+      await send("/api/auth/password", {
+        current_password: $("currentPassword").value,
+        new_password: $("newPassword").value,
+      });
+      window.location.replace("/");
+    } catch (err) {
+      fail(box, err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "ثبت و ورود";
+    }
+  });
+})();
+</script>
+</body>
+</html>
