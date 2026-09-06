@@ -1,0 +1,18 @@
+# پایان خط را همه‌جا LF نگه می‌دارد.
+# دلیل: entrypoint.sh و اسکریپت‌های دیگر داخل کانتینر لینوکسی اجرا می‌شوند.
+# اگر Git روی ویندوز آن‌ها را CRLF چک‌اوت کند، کانتینر با خطای گمراه‌کننده
+# «no such file or directory» بالا نمی‌آید — چون \r بخشی از مسیر مفسر می‌شود.
+* text=auto eol=lf
+
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.conf      text eol=lf
+*.yml       text eol=lf
+*.ini       text eol=lf
+*.mako      text eol=lf
+
+*.woff2 binary
+*.png   binary
+*.jpg   binary
+*.pdf   binary
+*.xlsx  binary

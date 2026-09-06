@@ -1,0 +1,13 @@
+# کانتکست ساخت، ریشه پروژه است؛ این‌ها نباید به دیمن داکر فرستاده شوند.
+.git
+.gitattributes
+.gitignore
+.env
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+backend/tests
+offline-bundle
+README.fa.md
+ops
