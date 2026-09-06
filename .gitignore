@@ -1,9 +1,3 @@
-.env
-*.pyc
-__pycache__/
-.venv/
-.pytest_cache/
 data/
-offline-bundle/
-.env.windows
-data/
+node_modules/
+*.log

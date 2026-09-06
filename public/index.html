@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>سامانه مدیریت قراردادها</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand">
+    <span class="seal" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+        <path d="M13 2v7h7"></path><path d="M8 13h8"></path><path d="M8 17h5"></path>
+      </svg>
+    </span>
+    سامانه مدیریت قراردادها
+  </span>
+  <span class="grow"></span>
+  <span class="whoami" id="whoami"></span>
+  <button class="btn btn-sm" id="usersBtn" hidden>کاربران</button>
+  <button class="btn btn-sm" id="auditBtn" hidden>ممیزی تغییرات</button>
+  <button class="btn btn-sm" id="logoutBtn">خروج</button>
+</header>
+
+<nav class="tabs" id="tabs" aria-label="بخش‌های سامانه"></nav>
+
+<main class="wrap">
+  <section class="tiles" id="tiles" aria-label="خلاصه وضعیت"></section>
+
+  <section class="toolbar">
+    <div class="field">
+      <label for="q">جستجو</label>
+      <input type="search" id="q" placeholder="طرف قرارداد، موضوع، شماره…">
+    </div>
+    <div class="field">
+      <label for="fKind">نوع</label>
+      <select id="fKind">
+        <option value="">همه</option>
+        <option value="contract">قرارداد</option>
+        <option value="mou">تفاهم‌نامه</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="fStatus">وضعیت</label>
+      <select id="fStatus">
+        <option value="">همه</option>
+        <option value="over">منقضی</option>
+        <option value="soon">رو به انقضا</option>
+        <option value="live">جاری</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="sort">مرتب‌سازی</label>
+      <select id="sort">
+        <option value="end">تاریخ پایان</option>
+        <option value="party">طرف قرارداد</option>
+        <option value="amount">مبلغ</option>
+        <option value="number">شماره</option>
+      </select>
+    </div>
+    <span class="grow"></span>
+    <span class="count" id="count"></span>
+    <button class="btn" id="templateBtn">قالب اکسل</button>
+    <button class="btn" id="importBtn" hidden>درون‌ریزی اکسل</button>
+    <button class="btn" id="exportBtn">خروجی اکسل</button>
+    <button class="btn btn-primary" id="newBtn" hidden>ثبت سند تازه</button>
+  </section>
+
+  <div class="table-shell">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="stripe" scope="col">وضعیت</th>
+            <th scope="col">شماره</th>
+            <th scope="col">نوع</th>
+            <th scope="col">طرف قرارداد</th>
+            <th scope="col">موضوع</th>
+            <th scope="col">مبلغ (ریال)</th>
+            <th scope="col">بازه و باقیمانده</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty" hidden>سندی با این فیلترها پیدا نشد.</div>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- کشوی مشاهده -->
+<aside class="drawer" id="viewDrawer" aria-label="جزئیات سند">
+  <div class="drawer-head">
+    <h2 id="viewTitle">—</h2>
+    <button class="x" id="viewClose" type="button" aria-label="بستن">✕</button>
+  </div>
+  <div class="drawer-body" id="viewBody"></div>
+  <div class="drawer-foot">
+    <button class="btn btn-primary" id="editBtn" hidden>ویرایش</button>
+    <button class="btn btn-danger" id="deleteBtn" hidden>حذف</button>
+  </div>
+</aside>
+
+<!-- کشوی ثبت و ویرایش -->
+<aside class="drawer" id="formDrawer" aria-label="ثبت و ویرایش سند">
+  <div class="drawer-head">
+    <h2 id="formTitle">ثبت سند تازه</h2>
+    <button class="x" id="formClose" type="button" aria-label="بستن">✕</button>
+  </div>
+  <div class="drawer-body" id="formBody"></div>
+  <div class="drawer-foot">
+    <button class="btn btn-primary" id="saveBtn">ثبت</button>
+    <button class="btn" id="cancelBtn">انصراف</button>
+  </div>
+</aside>
+
+<input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" hidden>
+
+<!-- پیش‌نمایش پیوست -->
+<div class="modal" id="previewModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="previewTitle">پیش‌نمایش</h2>
+      <button class="x" type="button" data-close-modal aria-label="بستن">✕</button>
+    </div>
+    <div class="modal-body" id="previewBody"></div>
+  </div>
+</div>
+
+<!-- درون‌ریزی اکسل -->
+<div class="modal" id="importModal" hidden>
+  <div class="modal-card narrow">
+    <div class="modal-head">
+      <h2>درون‌ریزی از اکسل</h2>
+      <button class="x" type="button" data-close-modal aria-label="بستن">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="note">اول «بررسی آزمایشی» بزنید تا خطاهای سطر‌به‌سطر را ببینید. تا وقتی
+        «ثبت نهایی» را نزنید هیچ چیزی در سامانه ذخیره نمی‌شود.</p>
+      <div class="field">
+        <label for="importSection">بخش پیش‌فرض سطرهایی که ستون بخش ندارند</label>
+        <select id="importSection"></select>
+      </div>
+      <div class="field">
+        <label>فایل اکسل</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn" id="pickImport" type="button">انتخاب فایل…</button>
+          <span class="count" id="importFileName">فایلی انتخاب نشده</span>
+        </div>
+        <input type="file" id="importInput" accept=".xlsx" hidden>
+      </div>
+      <div class="note" id="importReport" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="dryBtn">بررسی آزمایشی</button>
+      <button class="btn btn-primary" id="commitBtn" hidden>ثبت نهایی</button>
+      <button class="btn" type="button" data-close-modal>بستن</button>
+    </div>
+  </div>
+</div>
+
+<!-- کاربران -->
+<div class="modal" id="usersModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>مدیریت کاربران</h2>
+      <button class="x" type="button" data-close-modal aria-label="بستن">✕</button>
+    </div>
+    <div class="modal-body" id="usersBody"></div>
+  </div>
+</div>
+
+<!-- ممیزی -->
+<div class="modal" id="auditModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>ممیزی تغییرات کاربران</h2>
+      <button class="x" type="button" data-close-modal aria-label="بستن">✕</button>
+    </div>
+    <div class="modal-body" id="auditBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
