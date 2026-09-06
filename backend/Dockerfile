@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /srv
 
 # gcc برای ساخت argon2-cffi لازم است و بعد از نصب حذف می‌شود.
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN apt-get update \
  && apt-get install -y --no-install-recommends build-essential libpq5 \
  && pip install --no-cache-dir -r requirements.txt \
@@ -15,10 +15,12 @@ RUN apt-get update \
  && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
 
-COPY alembic.ini .
-COPY migrations ./migrations
-COPY app ./app
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY backend/alembic.ini .
+COPY backend/migrations ./migrations
+COPY backend/app ./app
+COPY backend/entrypoint.sh /usr/local/bin/entrypoint.sh
+# فرانت‌اند داخل خود ایمیج است تا استقرار به mount بیرونی وابسته نباشد.
+COPY frontend ./frontend
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # اجرا با کاربر غیر روت

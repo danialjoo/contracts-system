@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     upload_dir: Path = Path("/data/uploads")
     max_upload_mb: int = 20
 
+    # مسیر فرانت‌اند؛ خالی بماند خودش پیدا می‌کند.
+    frontend_dir: Path | None = None
+
     # هشدار انقضا
     expiring_days: int = 90
 

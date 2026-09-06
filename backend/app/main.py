@@ -58,8 +58,29 @@ def meta() -> dict:
 
 
 # فرانت‌اند به‌صورت فایل ایستا از همین سرویس سرو می‌شود تا استقرار یک‌تکه بماند.
-FRONTEND = Path(__file__).resolve().parents[2] / "frontend"
-if FRONTEND.is_dir():
+def find_frontend() -> Path | None:
+    """پوشه فرانت‌اند را پیدا می‌کند.
+
+    چیدمان داخل ایمیج داکر (/srv/app/main.py) با چیدمان توسعه محلی
+    (backend/app/main.py) فرق دارد، پس هر دو بررسی می‌شوند و وجود
+    index.html ملاک است، نه صرفاً وجود پوشه.
+    """
+    here = Path(__file__).resolve()
+    candidates = [
+        settings.frontend_dir,
+        here.parents[1] / "frontend",   # داخل ایمیج: /srv/frontend
+        here.parents[2] / "frontend",   # توسعه محلی: contracts-system/frontend
+    ]
+    for candidate in candidates:
+        if candidate and (candidate / "index.html").is_file():
+            return candidate
+    return None
+
+
+FRONTEND = find_frontend()
+if FRONTEND is None:
+    log.error("پوشه فرانت‌اند پیدا نشد؛ فقط API در دسترس است.")
+else:
     app.mount("/static", StaticFiles(directory=FRONTEND), name="static")
 
     @app.get("/")
