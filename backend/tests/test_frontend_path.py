@@ -45,3 +45,25 @@ def test_missing_frontend_returns_none(tmp_path, monkeypatch):
     from app.config import settings
     monkeypatch.setattr(settings, "frontend_dir", None)
     assert find_frontend() is None
+
+
+def test_upload_dir_default_is_platform_aware():
+    """روی ویندوز مسیر پیش‌فرض نباید به ریشه درایو بیفتد."""
+    import os
+    from app.config import _default_upload_dir
+
+    resolved = _default_upload_dir()
+    if os.name == "nt":
+        assert resolved.parent.name == "data" or resolved.name == "uploads"
+        assert resolved.drive or not str(resolved).startswith("\\")
+    else:
+        assert resolved == Path("/data/uploads")
+
+
+def test_scan_link_accepts_a_windows_network_path():
+    """مسیر شبکه ویندوزی \\\\server\\share باید معتبر باشد."""
+    from app.schemas import ContractIn
+
+    payload = ContractIn(section="technical", contract_number="X-1",
+                         scan_link=r"\\fileserver\contracts\1405\scan.pdf")
+    assert payload.scan_link.startswith("\\\\")

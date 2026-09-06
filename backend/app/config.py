@@ -1,7 +1,21 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_upload_dir() -> Path:
+    """محل پیش‌فرض نگهداری پیوست‌ها.
+
+    در کانتینر لینوکسی /data/uploads است. روی ویندوز آن مسیر به ریشه درایو
+    می‌افتد که هم جای مناسبی نیست و هم معمولاً نوشتن در آن مجوز ادمین
+    می‌خواهد، پس کنار خود پروژه ساخته می‌شود.
+    """
+    if os.name == "nt":
+        return Path(__file__).resolve().parents[2] / "data" / "uploads"
+    return Path("/data/uploads")
 
 
 class Settings(BaseSettings):
@@ -21,7 +35,7 @@ class Settings(BaseSettings):
     lockout_minutes: int = 15
 
     # پیوست‌ها
-    upload_dir: Path = Path("/data/uploads")
+    upload_dir: Path = _default_upload_dir()
     max_upload_mb: int = 20
 
     # مسیر فرانت‌اند؛ خالی بماند خودش پیدا می‌کند.
