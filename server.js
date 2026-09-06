@@ -564,7 +564,42 @@ async function main(){
   }
   banner.push('  ' + '─'.repeat(56), '  برای توقف: Ctrl+C', '');
 
-  http.createServer(handle).listen(PORT, HOST, () => console.log(banner.join('\n')));
+  const server = http.createServer(handle);
+
+  /* بدون این، اشغال بودن پورت یک stack trace خام نود چاپ می‌کند که برای
+     کاربر روی سرور شرکت هیچ معنایی ندارد و راهنمایی هم نمی‌کند. */
+  server.on('error', err => {
+    if (err.code === 'EADDRINUSE'){
+      console.error([
+        '', '  ' + '─'.repeat(56),
+        `  پورت ${PORT} روی این سیستم اشغال است.`,
+        '  ' + '─'.repeat(56),
+        '  یعنی برنامه دیگری از همین پورت استفاده می‌کند.',
+        '',
+        '  دو راه دارید:',
+        '',
+        `  ۱) اگر سامانه از قبل در حال اجراست، همین حالا بازش کنید:`,
+        `     http://localhost:${PORT}`,
+        '',
+        '  ۲) یا سامانه را روی پورت دیگری بالا بیاورید. در PowerShell:',
+        '       $env:PORT = "8081"',
+        '       node server.js',
+        '',
+        '     در Command Prompt:',
+        '       set PORT=8081',
+        '       node server.js',
+        '  ' + '─'.repeat(56), ''
+      ].join('\n'));
+    } else if (err.code === 'EACCES'){
+      console.error(`\n  اجازه باز کردن پورت ${PORT} داده نشد.` +
+        '\n  پورت‌های کمتر از ۱۰۲۴ دسترسی مدیر می‌خواهند؛ پورت بالاتری انتخاب کنید.\n');
+    } else {
+      console.error('\n  راه‌اندازی سرور ناموفق بود:', err.message, '\n');
+    }
+    process.exit(1);
+  });
+
+  server.listen(PORT, HOST, () => console.log(banner.join('\n')));
 }
 
 if (require.main === module) main().catch(e => { console.error('راه‌اندازی ناموفق:', e.message); process.exit(1); });
